@@ -1,0 +1,16 @@
+{
+  "name": "projectile",
+  "version": "1.0.0",
+  "description": "automatisierung Projectile",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Hai Dang",
+  "license": "ISC",
+  "dependencies": {
+    "jquery": "^3.2.1",
+    "request": "^2.83.0"
+  }
+}
