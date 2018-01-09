@@ -12,8 +12,8 @@ var options = { method: 'POST',
             jsenabled: '1',
             isAjax: '0',
             develop: '0',
-            login: 'haiduc.dang',
-            password: 'He0MeuNT' },
+            login: '',
+            password: '' },
     strictSSL: false //TODO: SSL Zertifizierung mit node.js
 };
 
