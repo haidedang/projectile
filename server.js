@@ -1,5 +1,6 @@
 
 let request = require("request");
+const readline = require('readline');
 
 /**
  *
@@ -92,7 +93,7 @@ let jobList = async () => {
         Dock: [ 'Area.TrackingArea', 'Area.ProjectManagementArea' ] } , employee);
 };
 
-jobList(); //
+
 
 
 async function bookTime (time, note, project, listentry){
@@ -265,34 +266,39 @@ function getDayListToday( cookie, employee){
 
 }
 
-async function saveEntry(cookie, employee){
+async function saveEntry(cookie, employee, number, time, project, note){
+    console.log(employee)
 
+    let temp = await  PostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=get&_dc=1515081239766', cookie,{"Dock":["Area.TrackingArea"],[employee]:["DayList","JobList","Begin","Favorites","TrackingRestriction","FilterCustomer","FilterProject"]})
+    let dayList = await temp["values"][employee][2]["v"];
+
+    let listEntry =   dayList[number];
     // Timetracker page
     await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=get&_dc=1515597712965', cookie, {[employee]:["DayList","JobList","Begin","Favorites","TrackingRestriction","FilterCustomer","FilterProject"],"Dock":["Area.TrackingArea","Area.ProjectManagementArea"]} );
     // setToday
     await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515501823869', cookie, {"values":{[employee]:[{"n":"Begin","v":new Date()}]}})
     //time
-    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515080248606', cookie,  {"values":{"+.|DayList|0|TimeTracker!^.|Default|Employee|1|475":[{"n":"Time","v":6 }]}} );
+    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515080248606', cookie,  {"values":{[listEntry]:[{"n":"Time","v": time }]}} );
     // select Project
-    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515080624305', cookie, {"values":{"+.|DayList|0|TimeTracker!^.|Default|Employee|1|475":[{"n":"What","v":"2759-327"}]}});
+    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515080624305', cookie, {"values":{[listEntry]:[{"n":"What","v": project}]}});
     // write note
-    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515080659058', cookie,  {"values":{"+.|DayList|0|TimeTracker!^.|Default|Employee|1|475":[{"n":"Note","v":"Automatisierung Projectile mit Node.jefdfds"}]}});
+    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=commit&_dc=1515080659058', cookie,  {"values":{[listEntry]:[{"n":"Note","v": note}]}});
     // save entry
-    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=action&_dc=1515080819797', cookie,  {"ref":"TimeTracker!^.|Default|Employee|1|475","name":"*","action":"Save","Params":{}})
+    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=action&_dc=1515080819797', cookie,  {"ref":employee,"name":"*","action":"Save","Params":{}})
     // refresh
-    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=options&_dc=1515596886820', cookie,  {"TimeTracker!^.|Default|Employee|1|475":["FilterCustomer","FilterProject"]});
+    await normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=options&_dc=1515596886820', cookie,  {[employee]:["FilterCustomer","FilterProject"]});
 
 }
 
-async function Save(){
+async function Save(listEntry, time, project, note){
     let cookie =  await login();
     let employee = await getEmployee(cookie);
-
-    await saveEntry (cookie, employee);
+    await saveEntry (cookie, employee, listEntry, time, project, note);
+    // await saveEntry (cookie, employee, 0);
     await console.log('Finish');
 }
 
-Save();
+// Save();
 
 
 async function setEntryToday(cookie, Employee){
@@ -307,6 +313,16 @@ async function setEntryToday(cookie, Employee){
 
     // normalPostURL('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=state&_dc=1515501825072', cookie, {"gui_TimeTracker_JobList":{"columns":[{"di":"gridcolumn-1287"},{"di":"rownumberer-1288","width":23},{"di":"_actions","width":46},{"di":"ProcessNumberWithLink"},{"di":"JobNameWithLink"},{"di":"ProjectNameWithLink"},{"di":"Customer"},{"di":"DueTime"},{"di":"Time"},{"di":"TotalTime"},{"di":"TimeToCompletion"},{"di":"Favorite","width":30}],"filters":{}}});
 
-
 }
+
+//MAIN
+
+jobList();
+
+if (process.argv.length >2) {
+    let arg= process.argv.splice(2);
+    Save(arg[0], arg[1], arg[2], arg[3]);
+}
+
+
 
