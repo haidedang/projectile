@@ -1,8 +1,7 @@
-
+const fs = require('fs');
 let request = require("request");
-const readline = require('readline');
-let LOGIN = '';
-let PASSWORD = ' ';
+
+let user = JSON.parse(fs.readFileSync('user.txt'));
 
 /**
  *
@@ -21,8 +20,8 @@ function login(){
                         jsenabled: '1',
                         isAjax: '0',
                         develop: '0',
-                        login: LOGIN,
-                        password: PASSWORD },
+                        login: user.login,
+                        password: user.password },
                 strictSSL: false //TODO: SSL Zertifizierung mit node.js
             };
 
@@ -34,8 +33,6 @@ function login(){
                 let cookie = temp.split(';')[0];
 
                 resolve(cookie);
-
-
             });
         }
     )
@@ -85,8 +82,7 @@ function showJobList(method, url, cookie, body, Employee){
                 advJoblist.push(obj);
             }
 
-            console.log(advJoblist);
-            resolve();
+            resolve(advJoblist);
         });
 
     })
@@ -190,15 +186,12 @@ async function Delete(listEntry){
     console.log("Finished Deleting.")
 }
 
-// Save();
-
-//MAIN
 
 let jobList = async () => {
     let cookie = await login();
     let employee = await getEmployee (cookie);
 
-    showJobList('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=get&_dc=1515081239766', cookie, { [employee]:
+    return showJobList('POST', 'https://projectile.office.sevenval.de/projectile/gui5ajax?action=get&_dc=1515081239766', cookie, { [employee]:
         [ 'DayList',
             'JobList',
             'Begin',
@@ -206,37 +199,57 @@ let jobList = async () => {
             'TrackingRestriction',
             'FilterCustomer',
             'FilterProject' ],
-        Dock: [ 'Area.TrackingArea', 'Area.ProjectManagementArea' ] } , employee);
+        Dock: [ 'Area.TrackingArea', 'Area.ProjectManagementArea' ] } , employee).then((data)=> {return data;});
+
 };
 
+function main(){
 
-async function main(){
-    let cookie = await login();
-    let employee = await getEmployee(cookie);
-    await setCalendarDateToday(cookie,employee);
-
-    await saveEntry(cookie, employee, 0, 6, "2759-328", "Test 1");
+  /*  await saveEntry(cookie, employee, 0, 6, "2759-328", "Test 1");
     await saveEntry(cookie, employee, 1, 6, "2759-328", "Test 2");
     await saveEntry(cookie, employee, 2, 6, "2759-328", "Test 3");
-  /*  await deleteEntry(cookie, employee, 1); // TODO: delete Entry not working yet.*/
+    /!*  await deleteEntry(cookie, employee, 1); // TODO: delete Entry not working yet.*!/
 
-   //await Save(1,7,"2759-328", "Test3");
+    //await Save(1,7,"2759-328", "Test3");*/
+
+    function command(){
+        console.log("(1) show JobList \n" + "(2) book working Time\n" + "(3) Exit");
+        console.log("Enter Number:");
+
+    }
+
+    command();
+
+    process.stdin.on('readable',  () => {
+        const chunk = process.stdin.read();
+
+        if (chunk == 1){
+                jobList().then((data) => {
+                    console.log(data);
+                    command();
+                });
+        } else if(chunk ==2) {
+            console.log('Enter: {listEntry} {time} {project-nr.} {note}\n' + 'example: 0 6 2759-327 "Automatisierung Projectile" ');
+        } else if (chunk == 3){
+            process.exit();
+        } else if (chunk !== null){
+            let result = chunk.toString().split(' ');
+            let temp = result.slice(3)
+            let newArr = temp.join().replace(/[,]/g, " ").replace(/["]/g, "");
+            // check for errors
+            if (result.length < 4){
+                throw new Error("invalid parameter");
+            } else {
+                Save(result[0], result[1], result[2], newArr).then(()=> command());
+            }
+
+            /*process.stdout.write('Saved! ');*/
+        }
+
+    });
 
 }
 
 main();
-
-
-/*
-jobList();
-
-// process.argv.forEach((item) => (console.log(item)));
-
-if (process.argv.length >2) {
-    let arg= process.argv.splice(2);
-    Save(arg[0], arg[1], arg[2], arg[3]);
-}
-*/
-
 
 
